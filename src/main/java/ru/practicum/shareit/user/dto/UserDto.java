@@ -1,8 +1,9 @@
-package ru.practicum.shareit.item.dto;
+package ru.practicum.shareit.user.dto;
 
 import lombok.*;
 import ru.practicum.shareit.marker.Create;
-import javax.validation.constraints.NotNull;
+import ru.practicum.shareit.marker.Update;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
 @Setter
@@ -10,12 +11,10 @@ import javax.validation.constraints.NotBlank;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class ItemDto {
+public class UserDto {
     private Long id;
     @NotBlank(groups = {Create.class})
     private String name;
-    @NotBlank(groups = {Create.class})
-    private String description;
-    @NotNull(groups = {Create.class})
-    private Boolean available;
+    @Email(groups = {Create.class, Update.class})
+    private String email;
 }
