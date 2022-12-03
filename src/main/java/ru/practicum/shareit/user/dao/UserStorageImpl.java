@@ -34,13 +34,13 @@ public class UserStorageImpl implements UserStorage {
     @Override
     public User save(User user) {
         if (emails.contains(user.getEmail())) {
-           throw new EmailAlreadyExistsException(String.format("User with the email=%s already exists"
-                   , user.getEmail())
+           throw new EmailAlreadyExistsException(String.format("User with the email=%s already exists",
+                   user.getEmail())
            );
         }
         if (user.getEmail() == null) {
-            throw new FieldWithoutException(String.format("User without email=%s"
-                    , user.getEmail())
+            throw new FieldWithoutException(String.format("User without email=%s",
+                    user.getEmail())
             );
         }
         user.setId(getIdCurrent());
@@ -52,13 +52,13 @@ public class UserStorageImpl implements UserStorage {
     @Override
     public User update(User user, Long id) {
         if (emails.contains(user.getEmail())) {
-            throw new EmailAlreadyExistsException(String.format("User with the email=%s already exists"
-                    , user.getEmail())
+            throw new EmailAlreadyExistsException(String.format("User with the email=%s already exists",
+                    user.getEmail())
             );
         }
         if (!users.containsKey(id)) {
-            throw new EntityNotFoundException(String.format("User with id=%d not found!"
-                    , id)
+            throw new EntityNotFoundException(String.format("User with id=%d not found!",
+                    id)
             );
         }
         final User oldUser = users.get(id);

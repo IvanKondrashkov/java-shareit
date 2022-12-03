@@ -37,16 +37,17 @@ class ItemControllerTest {
 
     @BeforeEach
     void init() {
-        owner = new User(1L
-                , "Nikolas"
-                , "nik@mail.ru"
+        owner = new User(1L,
+                "Nikolas",
+                "nik@mail.ru"
         );
 
-        item = new Item(1L
-                , "Drill"
-                , "Cordless drill"
-                , true
-                , owner);
+        item = new Item(1L,
+                "Drill",
+                "Cordless drill",
+                true,
+                owner
+        );
 
         gson = new GsonBuilder()
                 .serializeNulls()

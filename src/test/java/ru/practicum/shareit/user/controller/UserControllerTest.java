@@ -32,9 +32,9 @@ class UserControllerTest {
 
     @BeforeEach
     void init() {
-        user = new User(1L
-                , "Nikolas"
-                , "nik@mail.ru"
+        user = new User(1L,
+                "Nikolas",
+                "nik@mail.ru"
         );
 
         gson = new GsonBuilder()

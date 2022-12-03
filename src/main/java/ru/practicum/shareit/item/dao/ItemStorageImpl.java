@@ -50,19 +50,19 @@ public class ItemStorageImpl implements ItemStorage {
     @Override
     public Item save(Item item, Long userId) {
         if (userId == null) {
-            throw new FieldWithoutException(String.format("Request header without userId=%d"
-                    , userId)
+            throw new FieldWithoutException(String.format("Request header without userId=%d",
+                    userId)
             );
         }
         if (item.getAvailable() == null) {
-            throw new FieldWithoutException(String.format("Item without available=%b"
-                    , item.getAvailable())
+            throw new FieldWithoutException(String.format("Item without available=%b",
+                    item.getAvailable())
             );
         }
         if (item.getName().isBlank() || item.getDescription().isBlank()) {
-            throw new FieldEmptyException(String.format("Item is empty fields name=%s or description=%s"
-                    , item.getName()
-                    , item.getDescription())
+            throw new FieldEmptyException(String.format("Item is empty fields name=%s or description=%s",
+                    item.getName(),
+                    item.getDescription())
             );
         }
         item.setId(getIdCurrent());
@@ -73,21 +73,21 @@ public class ItemStorageImpl implements ItemStorage {
     @Override
     public Item update(Item item, Long userId, Long id) {
         if (userId == null) {
-            throw new FieldWithoutException(String.format("Request header without userId=%d"
-                    , userId)
+            throw new FieldWithoutException(String.format("Request header without userId=%d",
+                    userId)
             );
         }
         if (!items.containsKey(id)) {
-            throw new EntityNotFoundException(String.format("Item with id=%d not found!"
-                    , id)
+            throw new EntityNotFoundException(String.format("Item with id=%d not found!",
+                    id)
             );
         }
         final Item oldItem = items.get(id);
         final User owner = oldItem.getOwner();
 
         if (!owner.getId().equals(userId)) {
-            throw new UserConflictException(String.format("User userId=%d is not the owner of the item!"
-                    , userId)
+            throw new UserConflictException(String.format("User userId=%d is not the owner of the item!",
+                    userId)
             );
         }
         item.setId(id);
@@ -101,13 +101,13 @@ public class ItemStorageImpl implements ItemStorage {
     @Override
     public void deleteById(Long userId, Long id) {
         if (userId == null) {
-            throw new FieldWithoutException(String.format("Request header without userId=%d"
-                    , userId)
+            throw new FieldWithoutException(String.format("Request header without userId=%d",
+                    userId)
             );
         }
         if (!items.containsKey(id)) {
-            throw new EntityNotFoundException(String.format("Item with id=%d not found!"
-                    , id)
+            throw new EntityNotFoundException(String.format("Item with id=%d not found!",
+                    id)
             );
 
         }
@@ -115,8 +115,8 @@ public class ItemStorageImpl implements ItemStorage {
         final User owner = item.getOwner();
 
         if (!owner.getId().equals(userId)) {
-            throw new UserConflictException(String.format("User userId=%d is not the owner of the item!"
-                    , userId)
+            throw new UserConflictException(String.format("User userId=%d is not the owner of the item!",
+                    userId)
             );
         }
         items.remove(id);
