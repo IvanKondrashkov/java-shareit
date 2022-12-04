@@ -37,18 +37,8 @@ class ItemControllerTest {
 
     @BeforeEach
     void init() {
-        owner = new User(1L,
-                "Nikolas",
-                "nik@mail.ru"
-        );
-
-        item = new Item(1L,
-                "Drill",
-                "Cordless drill",
-                true,
-                owner
-        );
-
+        owner = new User(1L, "Nikolas", "nik@mail.ru");
+        item = new Item(1L, "Drill", "Cordless drill", true, owner);
         gson = new GsonBuilder()
                 .serializeNulls()
                 .create();
@@ -77,7 +67,7 @@ class ItemControllerTest {
 
     @Test
     @DisplayName("Send GET request /items/search?text={text}")
-    void findByKeyWords() throws Exception {
+    void findByKeyWord() throws Exception {
         final String text = "Drill";
         Mockito.when(itemStorage.findByKeyWord(owner.getId(), text)).thenReturn(List.of(item));
 

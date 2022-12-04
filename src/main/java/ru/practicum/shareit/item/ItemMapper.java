@@ -1,11 +1,12 @@
 package ru.practicum.shareit.item;
 
+import javax.validation.constraints.NotNull;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 public class ItemMapper {
-    public static ItemDto toItemDto(Item item) {
+    public static ItemDto toItemDto(@NotNull Item item) {
         return new ItemDto(
                 item.getId(),
                 item.getName(),

@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.dao;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.item.model.Item;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,11 +31,11 @@ public class ItemStorageImpl implements ItemStorage {
 
     @Override
     public List<Item> findByKeyWord(Long userId, String text) {
-        List<Item> listByKeyWords = items.values().stream()
+        List<Item> listByKeyWord = items.values().stream()
                 .filter(it -> it.getAvailable().equals(true))
-                .filter(it -> it.getName().toLowerCase().contains(text.toLowerCase()) || it.getDescription().toLowerCase().contains(text.toLowerCase()))
+                .filter(it -> StringUtils.containsIgnoreCase(it.getName(), text) || StringUtils.containsIgnoreCase(it.getDescription(), text))
                 .collect(Collectors.toList());
-        return text.isBlank() ? List.of() : listByKeyWords;
+        return text.isBlank() ? List.of() : listByKeyWord;
     }
 
     @Override
