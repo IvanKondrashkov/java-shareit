@@ -1,11 +1,11 @@
 package ru.practicum.shareit.user.controller;
 
 import java.util.List;
+import java.util.Optional;
 import org.mockito.Mockito;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.dao.UserStorage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import ru.practicum.shareit.user.repo.UserRepository;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -28,7 +29,7 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @MockBean
-    private UserStorage userStorage;
+    private UserRepository userRepository;
 
     @BeforeEach
     void init() {
@@ -42,13 +43,13 @@ class UserControllerTest {
     void tearDown() {
         user = null;
         gson = null;
-        mockMvc = null;
+        userRepository.deleteAll();
     }
 
     @Test
     @DisplayName("Send GET request /users/{id}")
     void findById() throws Exception {
-        Mockito.when(userStorage.findById(user.getId())).thenReturn(user);
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/users/{id}", user.getId())
@@ -60,7 +61,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Send GET request /users")
     void findAll() throws Exception {
-        Mockito.when(userStorage.findAll()).thenReturn(List.of(user));
+        Mockito.when(userRepository.findAll()).thenReturn(List.of(user));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/users")
@@ -72,6 +73,8 @@ class UserControllerTest {
     @Test
     @DisplayName("Send POST request /users")
     void save() throws Exception {
+        Mockito.when(userRepository.save(Mockito.any())).thenReturn(user);
+
         this.mockMvc.perform(MockMvcRequestBuilders
                         .post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,7 +85,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Send PATCH request /users/{id}")
     void update() throws Exception {
-        Mockito.when(userStorage.update(user, user.getId())).thenReturn(user);
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
         user.setName("Mike");
 
         this.mockMvc.perform(MockMvcRequestBuilders
@@ -96,7 +99,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Send DELETE request users/{id}")
     void deleteById() throws Exception {
-        Mockito.when(userStorage.findById(user.getId())).thenReturn(user);
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .delete("/users/{id}", user.getId())

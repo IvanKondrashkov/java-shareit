@@ -5,27 +5,27 @@ import ru.practicum.shareit.user.dto.UserDto;
 
 public interface UserService {
     /**
-     * Find user dto by id.
+     * Find user by id.
      * @param id User id.
      * @return UserDto.
      */
     UserDto findById(Long id);
 
     /**
-     * Find all users dto.
-     * @return List users dto.
+     * Find all users.
+     * @return List user dto.
      */
     List<UserDto> findAll();
 
     /**
-     * Create user dto.
+     * Create user.
      * @param userDto Entity.
      * @return UserDto.
      */
     UserDto save(UserDto userDto);
 
     /**
-     * Update user dto by id.
+     * Update user by id.
      * @param userDto Entity.
      * @param id User id.
      * @return UserDto.
@@ -33,7 +33,7 @@ public interface UserService {
     UserDto update(UserDto userDto, Long id);
 
     /**
-     * Delete user dto by id.
+     * Delete user by id.
      * @param id User id.
      */
     void deleteById(Long id);

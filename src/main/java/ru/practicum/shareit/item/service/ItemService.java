@@ -2,10 +2,12 @@ package ru.practicum.shareit.item.service;
 
 import java.util.List;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentInfoDto;
 
 public interface ItemService {
     /**
-     * Find item dto by id.
+     * Find item by id.
      * @param userId User id, owner item.
      * @param id Item id.
      * @return ItemDto.
@@ -16,19 +18,19 @@ public interface ItemService {
      * Find items dto by key word, flag available = true.
      * @param userId User id, owner item.
      * @param text Key word.
-     * @return List items dto.
+     * @return List item dto.
      */
     List<ItemDto> findByKeyWord(Long userId, String text);
 
     /**
      * Find all items dto by user id.
      * @param userId User id, owner item.
-     * @return List items dto.
+     * @return List item dto.
      */
     List<ItemDto> findAll(Long userId);
 
     /**
-     * Create item dto.
+     * Create item.
      * @param itemDto Entity dto.
      * @param userId User id, owner item.
      * @return ItemDto.
@@ -36,10 +38,10 @@ public interface ItemService {
     ItemDto save(ItemDto itemDto, Long userId);
 
     /**
-     * Update item dto by id. Only the owner can update it.
+     * Update item by id. Only the owner can update it.
      * @param itemDto Entity dto.
      * @param userId User id, owner item.
-     * @param id Item dto id.
+     * @param id Item id.
      * @return ItemDto.
      */
     ItemDto update(ItemDto itemDto, Long userId, Long id);
@@ -47,7 +49,16 @@ public interface ItemService {
     /**
      * Delete item dto by id. Only the owner can delete it.
      * @param userId User id, owner item.
-     * @param id Item dto id.
+     * @param id Item id.
      */
     void deleteById(Long userId, Long id);
+
+    /**
+     * Add comment after booking item.
+     * @param commentDto Entity dto.
+     * @param userId User id.
+     * @param id Comment id.
+     * @return CommentInfoDto.
+     */
+    CommentInfoDto saveComment(CommentDto commentDto, Long userId, Long id);
 }

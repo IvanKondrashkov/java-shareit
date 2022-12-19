@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item.controller;
+package ru.practicum.shareit.booking.controller;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,11 +6,12 @@ import java.time.LocalDateTime;
 import org.mockito.Mockito;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repo.BookingRepository;
-import ru.practicum.shareit.item.model.Comment;
-import ru.practicum.shareit.item.repo.CommentRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repo.ItemRepository;
 import ru.practicum.shareit.user.model.User;
@@ -31,12 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ItemControllerTest {
+class BookingControllerTest {
     private User owner;
     private User booker;
     private Item item;
     private Booking booking;
-    private Comment comment;
     private Gson gson;
     @Autowired
     private MockMvc mockMvc;
@@ -46,17 +46,15 @@ class ItemControllerTest {
     private ItemRepository itemRepository;
     @MockBean
     private BookingRepository bookingRepository;
-    @MockBean
-    private CommentRepository commentRepository;
 
     @BeforeEach
     void init() {
         owner = new User(1L, "Nikolas", "nik@mail.ru");
         booker = new User(2L, "Djon", "djony@mail.ru");
         item = new Item(1L, "Drill", "Cordless drill", true, owner);
-        booking = new Booking(1L, LocalDateTime.now().minusDays(15), LocalDateTime.now().minusDays(10), BookingStatus.APPROVED, item, booker);
-        comment = new Comment(1L, "Good drill!", LocalDateTime.now(), item, booker);
+        booking = new Booking(1L, LocalDateTime.now().minusDays(15), LocalDateTime.now().minusDays(10), BookingStatus.WAITING, item, booker);
         gson = new GsonBuilder()
+                .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
                 .serializeNulls()
                 .create();
     }
@@ -67,50 +65,48 @@ class ItemControllerTest {
         booker = null;
         item = null;
         booking = null;
-        comment = null;
         gson = null;
         userRepository.deleteAll();
         itemRepository.deleteAll();
         bookingRepository.deleteAll();
-        commentRepository.deleteAll();
     }
 
     @Test
-    @DisplayName("Send GET request /items/{id}")
+    @DisplayName("Send GET request /bookings/{id}")
     void findById() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(itemRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(item));
+        Mockito.when(bookingRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .get("/items/{id}", item.getId())
-                        .header("X-Sharer-User-Id", owner.getId())
+                        .get("/bookings/{id}", item.getId())
+                        .header("X-Sharer-User-Id", booker.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber());
     }
 
     @Test
-    @DisplayName("Send GET request /items/search?text={text}")
-    void findByKeyWord() throws Exception {
-        final String text = "Drill";
+    @DisplayName("Send GET request /bookings?state={state}")
+    void findAllByBooker() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(itemRepository.findAllByText(text)).thenReturn(List.of(item));
+        Mockito.when(bookingRepository.findAllByBookerId(Mockito.any(), Mockito.any())).thenReturn(List.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .get("/items/search?text={text}", text)
-                        .header("X-Sharer-User-Id", owner.getId())
+                        .get("/bookings?state={state}", BookingState.PAST)
+                        .header("X-Sharer-User-Id", booker.getId())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
     }
 
     @Test
-    @DisplayName("Send GET request /items")
-    void findAll() throws Exception {
+    @DisplayName("Send GET request /bookings/owner?state={state}")
+    void findAllByOwner() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(itemRepository.findAllByOwnerId(Mockito.any())).thenReturn(List.of(item));
+        Mockito.when(bookingRepository.findAllByOwnerId(Mockito.any(), Mockito.any())).thenReturn(List.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .get("/items")
+                        .get("/bookings/owner?state={state}", BookingState.PAST)
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -118,63 +114,46 @@ class ItemControllerTest {
     }
 
     @Test
-    @DisplayName("Send POST request /items")
+    @DisplayName("Send POST request /bookings")
     void save() throws Exception {
-        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(itemRepository.save(Mockito.any())).thenReturn(item);
+        booking = new Booking(2L, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), BookingStatus.WAITING, item, booker);
+        final BookingDto dto = BookingMapper.toBookingDto(booking);
 
-        this.mockMvc.perform(MockMvcRequestBuilders
-                        .post("/items")
-                        .header("X-Sharer-User-Id", owner.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(item)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("Send POST request /items/{id}/comment")
-    void saveComment() throws Exception {
-        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
+        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(booker));
         Mockito.when(itemRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(item));
-        Mockito.when(bookingRepository.findAllByItemId(Mockito.any())).thenReturn(List.of(booking));
-        Mockito.when(commentRepository.save(Mockito.any())).thenReturn(comment);
+        Mockito.when(bookingRepository.save(Mockito.any())).thenReturn(booking);
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .post("/items/{id}/comment", item.getId())
+                        .post("/bookings")
                         .header("X-Sharer-User-Id", booker.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(comment)))
+                        .content(gson.toJson(dto)))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("Send PATCH request /items/{id}")
+    @DisplayName("Send PATCH request /bookings/{id}?approved={approved}")
     void update() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
         Mockito.when(itemRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(item));
-        item.setName("Drill 2000");
-        item.setAvailable(false);
-        item.setDescription("Very good drill!");
+        Mockito.when(bookingRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .patch("/items/{id}", item.getId())
+                        .patch("/bookings/{id}?approved={approved}", booking.getId(), "false")
                         .header("X-Sharer-User-Id", owner.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(item)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Drill 2000"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.available").value(false))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.description").value("Very good drill!"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status").value(BookingStatus.REJECTED.name()));
     }
 
     @Test
-    @DisplayName("Send DELETE request items/{id}")
+    @DisplayName("Send DELETE request /bookings/{id}")
     void deleteById() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(itemRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(item));
+        Mockito.when(bookingRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .delete("/items/{id}", item.getId())
+                        .delete("/bookings/{id}", booking.getId())
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
