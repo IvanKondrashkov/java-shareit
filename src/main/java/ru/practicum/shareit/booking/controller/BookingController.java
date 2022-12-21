@@ -24,25 +24,29 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<BookingInfoDto> findAllByBooker(@RequestHeader("X-Sharer-User-Id") Long userId, @RequestParam(name = "state", defaultValue = "ALL") String state) {
+    public List<BookingInfoDto> findAllByBookerId(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                                @RequestParam(name = "state", defaultValue = "ALL") String state) {
         log.info("Send get request /bookings?state={}", state);
-        return bookingService.findAllByBooker(userId, state);
+        return bookingService.findAllByBookerId(userId, state);
     }
 
     @GetMapping("/owner")
-    public List<BookingInfoDto> findAllByOwner(@RequestHeader("X-Sharer-User-Id") Long userId, @RequestParam(name = "state", defaultValue = "ALL") String state) {
+    public List<BookingInfoDto> findAllByItemOwnerId(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                               @RequestParam(name = "state", defaultValue = "ALL") String state) {
         log.info("Send get request /bookings/owner?state={}", state);
-        return bookingService.findAllByOwner(userId, state);
+        return bookingService.findAllByItemOwnerId(userId, state);
     }
 
     @PostMapping
-    public BookingInfoDto save(@Validated({Create.class}) @RequestBody BookingDto bookingDto, @RequestHeader("X-Sharer-User-Id") Long userId) {
+    public BookingInfoDto save(@Validated({Create.class}) @RequestBody BookingDto bookingDto,
+                               @RequestHeader("X-Sharer-User-Id") Long userId) {
         log.info("Send post request /bookings");
         return bookingService.save(bookingDto, userId);
     }
 
     @PatchMapping("/{id}")
-    public BookingInfoDto update(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long id, @RequestParam(name = "approved") String approved) {
+    public BookingInfoDto update(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                 @PathVariable Long id, @RequestParam(name = "approved") String approved) {
         log.info("Send patch request /bookings/{}?approved={}", id, approved);
         return bookingService.update(userId, id, approved);
     }

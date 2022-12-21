@@ -20,7 +20,7 @@ public interface ItemService {
      * @param text Key word.
      * @return List item dto.
      */
-    List<ItemDto> findByKeyWord(Long userId, String text);
+    List<ItemDto> findAllByText(Long userId, String text);
 
     /**
      * Find all items dto by user id.

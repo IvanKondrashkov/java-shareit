@@ -91,7 +91,7 @@ class ItemControllerTest {
 
     @Test
     @DisplayName("Send GET request /items/search?text={text}")
-    void findByKeyWord() throws Exception {
+    void findAllByText() throws Exception {
         final String text = "Drill";
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
         Mockito.when(itemRepository.findAllByText(text)).thenReturn(List.of(item));

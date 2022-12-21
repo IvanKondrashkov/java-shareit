@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.UserMapper;
@@ -21,10 +22,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto findById(Long id) {
-        final User u = userRepository.findById(id).orElseThrow(
+        final User userWrap = userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", id))
         );
-        return UserMapper.toUserDto(u);
+        return UserMapper.toUserDto(userWrap);
     }
 
     @Override
@@ -39,8 +40,8 @@ public class UserServiceImpl implements UserService {
     public UserDto save(UserDto userDto) {
         final User user = UserMapper.toUser(userDto);
         try {
-            final User u = userRepository.save(user);
-            return UserMapper.toUserDto(u);
+            final User userWrap = userRepository.save(user);
+            return UserMapper.toUserDto(userWrap);
         } catch (DataIntegrityViolationException e) {
             throw new EntityExistsException(String.format("User with the email=%s already exists", user.getEmail()));
         }
@@ -50,18 +51,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto update(UserDto userDto, Long id) {
         final User user = UserMapper.toUser(userDto);
-        final User u = userRepository.findById(id).orElseThrow(
+        final User userWrap = userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", id))
         );
-        if (user.getName() != null) {
-            u.setName(user.getName());
-        }
-        if (user.getEmail() != null) {
-            u.setEmail(user.getEmail());
-        }
+        Optional.ofNullable(user.getName()).ifPresent(opt -> userWrap.setName(user.getName()));
+        Optional.ofNullable(user.getEmail()).ifPresent(opt -> userWrap.setEmail(user.getEmail()));
         try {
-            userRepository.save(u);
-            return UserMapper.toUserDto(u);
+            userRepository.save(userWrap);
+            return UserMapper.toUserDto(userWrap);
         } catch (DataIntegrityViolationException e) {
             throw new EntityExistsException(String.format("User with the email=%s already exists", user.getEmail()));
         }
@@ -70,9 +67,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteById(Long id) {
-        final User u = userRepository.findById(id).orElseThrow(
+        final User userWrap = userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", id))
         );
-        userRepository.deleteById(u.getId());
+        userRepository.deleteById(userWrap.getId());
     }
 }

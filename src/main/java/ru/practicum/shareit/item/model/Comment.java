@@ -16,6 +16,7 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length = 300)
     private String text;
     private LocalDateTime created;
     @ManyToOne

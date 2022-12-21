@@ -25,9 +25,10 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<ItemDto> findByKeyWord(@RequestHeader("X-Sharer-User-Id") Long userId, @RequestParam(value = "text") String text) {
+    public List<ItemDto> findAllByText(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                        @RequestParam(value = "text") String text) {
         log.info("Send get request /items/search?text={}", text);
-        return itemService.findByKeyWord(userId, text);
+        return itemService.findAllByText(userId, text);
     }
 
     @GetMapping
@@ -43,7 +44,8 @@ public class ItemController {
     }
 
     @PostMapping("/{id}/comment")
-    public CommentInfoDto saveComment(@Validated({Create.class}) @RequestBody CommentDto commentDto, @RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long id) {
+    public CommentInfoDto saveComment(@Validated({Create.class}) @RequestBody CommentDto commentDto,
+                                      @RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long id) {
         log.info("Send post request /items/{}/comment", id);
         return itemService.saveComment(commentDto, userId, id);
     }

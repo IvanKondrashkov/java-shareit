@@ -33,109 +33,106 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingInfoDto findById(Long userId, Long id) {
-        final User u = userRepository.findById(userId).orElseThrow(
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final Booking b = bookingRepository.findById(id).orElseThrow(
+        final Booking bookingWrap = bookingRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("Booking with id=%d not found!", id))
         );
-        final User booker = b.getBooker();
-        final User owner = b.getItem().getOwner();
+        final User booker = bookingWrap.getBooker();
+        final User owner = bookingWrap.getItem().getOwner();
 
-        if (booker.getId().equals(u.getId()) || owner.getId().equals(u.getId())) {
-            return BookingMapper.toBookingDtoInfo(b);
+        if (booker.getId().equals(userWrap.getId()) || owner.getId().equals(userWrap.getId())) {
+            return BookingMapper.toBookingDtoInfo(bookingWrap);
         }
         throw new EntityNotFoundException(String.format("User with id=%d does not have the right to request extraction!", userId));
     }
 
     @Override
-    public List<BookingInfoDto> findAllByBooker(Long userId, String state) {
-        final User booker = userRepository.findById(userId).orElseThrow(
+    public List<BookingInfoDto> findAllByBookerId(Long userId, String state) {
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
         final BookingState bookingState = BookingState.from(state);
         if (bookingState == null) {
             throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
         }
-        List<Booking> bookings = bookingRepository.findAllByBookerId(booker.getId(), Sort.by(Sort.Direction.DESC, "start"));
+        List<Booking> bookings = bookingRepository.findAllByBookerId(userWrap.getId(), Sort.by(Sort.Direction.DESC, "start"));
         return findAllByState(bookingState, bookings);
     }
 
     @Override
-    public List<BookingInfoDto> findAllByOwner(Long userId, String state) {
-        final User owner = userRepository.findById(userId).orElseThrow(
+    public List<BookingInfoDto> findAllByItemOwnerId(Long userId, String state) {
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
         final BookingState bookingState = BookingState.from(state);
         if (bookingState == null) {
             throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
         }
-        List<Booking> bookings = bookingRepository.findAllByOwnerId(owner.getId(), Sort.by(Sort.Direction.DESC, "start"));
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerId(userWrap.getId(), Sort.by(Sort.Direction.DESC, "start"));
         return findAllByState(bookingState, bookings);
     }
 
     @Override
     @Transactional
     public BookingInfoDto save(BookingDto bookingDto, Long userId) {
-        final User u = userRepository.findById(userId).orElseThrow(
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final Item i = itemRepository.findById(bookingDto.getItemId()).orElseThrow(
+        final Item itemWrap = itemRepository.findById(bookingDto.getItemId()).orElseThrow(
                 () -> new EntityNotFoundException(String.format("Item with id=%d not found!", bookingDto.getItemId()))
         );
-        if (i.getOwner().getId().equals(u.getId())) {
+        if (itemWrap.getOwner().getId().equals(userWrap.getId())) {
             throw new UserConflictException(String.format("User userId=%d is the owner of the item!", userId));
         }
-        if (!i.getAvailable()) {
-            throw new BookingStatusException(String.format("Item available=%b, booking rejected!", i.getAvailable()));
+        if (!itemWrap.getAvailable()) {
+            throw new BookingStatusException(String.format("Item available=%b, booking rejected!", itemWrap.getAvailable()));
         }
-        final Booking booking = BookingMapper.toBooking(bookingDto, BookingStatus.WAITING, i, u);
-        final Booking b = bookingRepository.save(booking);
-        return BookingMapper.toBookingDtoInfo(b);
+        final Booking booking = BookingMapper.toBooking(bookingDto, BookingStatus.WAITING, itemWrap, userWrap);
+        final Booking bookingWrap = bookingRepository.save(booking);
+        return BookingMapper.toBookingDtoInfo(bookingWrap);
     }
 
     @Override
     @Transactional
     public BookingInfoDto update(Long userId, Long id, String approved) {
-        final User u = userRepository.findById(userId).orElseThrow(
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final Booking b = bookingRepository.findById(id).orElseThrow(
+        final Booking bookingWrap = bookingRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("Booking with id=%d not found!", id))
         );
-        final Item i = itemRepository.findById(b.getItem().getId()).orElseThrow(
-                () -> new EntityNotFoundException(String.format("Item with id=%d not found!", b.getItem().getId()))
+        final Item itemWrap = itemRepository.findById(bookingWrap.getItem().getId()).orElseThrow(
+                () -> new EntityNotFoundException(String.format("Item with id=%d not found!", bookingWrap.getItem().getId()))
         );
-        if (!i.getOwner().getId().equals(u.getId())) {
+        if (!itemWrap.getOwner().getId().equals(userWrap.getId())) {
             throw new UserConflictException(String.format("User userId=%d is not the owner of the item!", userId));
         }
-
-        if (Boolean.parseBoolean(approved) && b.getStatus() == BookingStatus.WAITING) {
-            b.setStatus(BookingStatus.APPROVED);
-        } else if (b.getStatus() == BookingStatus.WAITING) {
-            b.setStatus(BookingStatus.REJECTED);
+        if (Boolean.parseBoolean(approved) && bookingWrap.getStatus() == BookingStatus.WAITING) {
+            bookingWrap.setStatus(BookingStatus.APPROVED);
+        } else if (bookingWrap.getStatus() == BookingStatus.WAITING) {
+            bookingWrap.setStatus(BookingStatus.REJECTED);
         } else {
-            throw new BookingStatusException(String.format("Booking status=%s!", b.getStatus()));
+            throw new BookingStatusException(String.format("Booking status=%s!", bookingWrap.getStatus()));
         }
-
-        bookingRepository.save(b);
-        return BookingMapper.toBookingDtoInfo(b);
+        bookingRepository.save(bookingWrap);
+        return BookingMapper.toBookingDtoInfo(bookingWrap);
     }
 
     @Override
     @Transactional
     public void deleteById(Long userId, Long id) {
-        final User u = userRepository.findById(userId).orElseThrow(
+        final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final Booking b = bookingRepository.findById(id).orElseThrow(
+        final Booking bookingWrap = bookingRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("Booking with id=%d not found!", id))
         );
-        final User booker = b.getBooker();
-        final User owner = b.getItem().getOwner();
-
-        if (booker.getId().equals(u.getId()) || owner.getId().equals(u.getId())) {
-            bookingRepository.deleteById(b.getId());
+        final User booker = bookingWrap.getBooker();
+        final User owner = bookingWrap.getItem().getOwner();
+        if (booker.getId().equals(userWrap.getId()) || owner.getId().equals(userWrap.getId())) {
+            bookingRepository.deleteById(bookingWrap.getId());
         } else {
             throw new EntityNotFoundException(String.format("User with id=%d does not have the right to request deletion!", userId));
         }
@@ -145,11 +142,6 @@ public class BookingServiceImpl implements BookingService {
         final LocalDateTime currentTime = LocalDateTime.now();
 
         switch (state) {
-            case ALL: {
-                return bookings.stream()
-                        .map(BookingMapper::toBookingDtoInfo)
-                        .collect(Collectors.toList());
-            }
             case CURRENT: {
                 return bookings.stream()
                         .filter(it -> it.getStart().isBefore(currentTime) && it.getEnd().isAfter(currentTime))
@@ -180,7 +172,11 @@ public class BookingServiceImpl implements BookingService {
                         .map(BookingMapper::toBookingDtoInfo)
                         .collect(Collectors.toList());
             }
+            default: {
+                return bookings.stream()
+                        .map(BookingMapper::toBookingDtoInfo)
+                        .collect(Collectors.toList());
+            }
         }
-        return null;
     }
 }

@@ -7,6 +7,7 @@ import org.mockito.Mockito;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.utils.LocalDateTimeAdapter;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
@@ -87,7 +88,7 @@ class BookingControllerTest {
 
     @Test
     @DisplayName("Send GET request /bookings?state={state}")
-    void findAllByBooker() throws Exception {
+    void findAllByBookerId() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
         Mockito.when(bookingRepository.findAllByBookerId(Mockito.any(), Mockito.any())).thenReturn(List.of(booking));
 
@@ -101,9 +102,9 @@ class BookingControllerTest {
 
     @Test
     @DisplayName("Send GET request /bookings/owner?state={state}")
-    void findAllByOwner() throws Exception {
+    void findAllByItemOwnerId() throws Exception {
         Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(owner));
-        Mockito.when(bookingRepository.findAllByOwnerId(Mockito.any(), Mockito.any())).thenReturn(List.of(booking));
+        Mockito.when(bookingRepository.findAllByItemOwnerId(Mockito.any(), Mockito.any())).thenReturn(List.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/bookings/owner?state={state}", BookingState.PAST)
