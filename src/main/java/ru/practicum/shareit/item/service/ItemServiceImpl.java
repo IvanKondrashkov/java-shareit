@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -22,6 +21,8 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.repo.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repo.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repo.UserRepository;
 import javax.persistence.EntityNotFoundException;
@@ -36,6 +37,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository requestRepository;
 
     @Override
     public ItemDto findById(Long userId, Long id) {
@@ -45,7 +47,7 @@ public class ItemServiceImpl implements ItemService {
         final Item itemWrap = itemRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("Item with id=%d not found!", id))
         );
-        final List<Booking> bookings = bookingRepository.findAllByItemOwnerId(userWrap.getId(), Sort.by(Sort.Direction.DESC, "start"));
+        final List<Booking> bookings = bookingRepository.findAllByItemOwnerId(userWrap.getId());
         final Booking lastBooking = findBookingByStatePastOrFuture(BookingState.PAST, bookings);
         final Booking nextBooking = findBookingByStatePastOrFuture(BookingState.FUTURE, bookings);
         final Set<Comment> comments = commentRepository.findAllByItemId(itemWrap.getId());
@@ -109,10 +111,16 @@ public class ItemServiceImpl implements ItemService {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final Item item = ItemMapper.toItem(itemDto, userWrap);
+        ItemRequest requestWrap = null;
+        if (itemDto.getRequestId() != null) {
+            requestWrap =  requestRepository.findById(itemDto.getRequestId()).orElseThrow(
+                    () -> new EntityNotFoundException(String.format("Item request with id=%d not found!", itemDto.getRequestId()))
+            );
+        }
+        final Item item = requestWrap == null ? ItemMapper.toItem(itemDto, userWrap) : ItemMapper.toItem(itemDto, userWrap, requestWrap);
         final Item itemWrap = itemRepository.save(item);
         final Set<Comment> comments = commentRepository.findAllByItemId(itemWrap.getId());
-        return ItemMapper.toItemDto(itemWrap, comments);
+        return itemWrap.getRequest() == null ? ItemMapper.toItemDto(itemWrap, comments) : ItemMapper.toItemDto(itemWrap, itemWrap.getRequest());
     }
 
     @Override
@@ -129,9 +137,9 @@ public class ItemServiceImpl implements ItemService {
             );
         }
         final Item item = ItemMapper.toItem(itemDto, userWrap);
-        Optional.ofNullable(item.getName()).ifPresent(opt -> itemWrap.setName(item.getName()));
-        Optional.ofNullable(item.getDescription()).ifPresent(opt -> itemWrap.setDescription(item.getDescription()));
-        Optional.ofNullable(item.getAvailable()).ifPresent(opt -> itemWrap.setAvailable(item.getAvailable()));
+        Optional.ofNullable(item.getName()).ifPresent(itemWrap::setName);
+        Optional.ofNullable(item.getDescription()).ifPresent(itemWrap::setDescription);
+        Optional.ofNullable(item.getAvailable()).ifPresent(itemWrap::setAvailable);
         final Set<Comment> comments = commentRepository.findAllByItemId(itemWrap.getId());
         itemRepository.save(itemWrap);
         return ItemMapper.toItemDto(itemWrap, comments);

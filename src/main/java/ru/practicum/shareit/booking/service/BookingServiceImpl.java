@@ -7,6 +7,7 @@ import java.util.List;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
+import ru.practicum.shareit.MyPageRequest;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -43,13 +44,13 @@ public class BookingServiceImpl implements BookingService {
         final User owner = bookingWrap.getItem().getOwner();
 
         if (booker.getId().equals(userWrap.getId()) || owner.getId().equals(userWrap.getId())) {
-            return BookingMapper.toBookingDtoInfo(bookingWrap);
+            return BookingMapper.toBookingInfoDto(bookingWrap);
         }
         throw new EntityNotFoundException(String.format("User with id=%d does not have the right to request extraction!", userId));
     }
 
     @Override
-    public List<BookingInfoDto> findAllByBookerId(Long userId, String state) {
+    public List<BookingInfoDto> findAllByBookerId(Long userId, String state, Integer from, Integer size) {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
@@ -57,12 +58,13 @@ public class BookingServiceImpl implements BookingService {
         if (bookingState == null) {
             throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
         }
-        List<Booking> bookings = bookingRepository.findAllByBookerId(userWrap.getId(), Sort.by(Sort.Direction.DESC, "start"));
+        final MyPageRequest pageRequest = new MyPageRequest(from, size, Sort.by(Sort.Direction.DESC, "start"));
+        List<Booking> bookings = bookingRepository.findAllByBookerId(userWrap.getId(), pageRequest);
         return findAllByState(bookingState, bookings);
     }
 
     @Override
-    public List<BookingInfoDto> findAllByItemOwnerId(Long userId, String state) {
+    public List<BookingInfoDto> findAllByItemOwnerId(Long userId, String state, Integer from, Integer size) {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
@@ -70,7 +72,8 @@ public class BookingServiceImpl implements BookingService {
         if (bookingState == null) {
             throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
         }
-        List<Booking> bookings = bookingRepository.findAllByItemOwnerId(userWrap.getId(), Sort.by(Sort.Direction.DESC, "start"));
+        final MyPageRequest pageRequest = new MyPageRequest(from, size, Sort.by(Sort.Direction.DESC, "start"));
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerId(userWrap.getId(), pageRequest);
         return findAllByState(bookingState, bookings);
     }
 
@@ -91,7 +94,7 @@ public class BookingServiceImpl implements BookingService {
         }
         final Booking booking = BookingMapper.toBooking(bookingDto, BookingStatus.WAITING, itemWrap, userWrap);
         final Booking bookingWrap = bookingRepository.save(booking);
-        return BookingMapper.toBookingDtoInfo(bookingWrap);
+        return BookingMapper.toBookingInfoDto(bookingWrap);
     }
 
     @Override
@@ -117,7 +120,7 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingStatusException(String.format("Booking status=%s!", bookingWrap.getStatus()));
         }
         bookingRepository.save(bookingWrap);
-        return BookingMapper.toBookingDtoInfo(bookingWrap);
+        return BookingMapper.toBookingInfoDto(bookingWrap);
     }
 
     @Override
@@ -145,36 +148,36 @@ public class BookingServiceImpl implements BookingService {
             case CURRENT: {
                 return bookings.stream()
                         .filter(it -> it.getStart().isBefore(currentTime) && it.getEnd().isAfter(currentTime))
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
             case PAST: {
                 return bookings.stream()
                         .filter(it -> it.getEnd().isBefore(currentTime))
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
             case FUTURE: {
                 return bookings.stream()
                         .filter(it -> it.getStart().isAfter(currentTime))
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
             case WAITING: {
                 return bookings.stream()
                         .filter(it -> it.getStatus() == BookingStatus.WAITING)
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
             case REJECTED: {
                 return bookings.stream()
                         .filter(it -> it.getStatus() == BookingStatus.REJECTED)
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
             default: {
                 return bookings.stream()
-                        .map(BookingMapper::toBookingDtoInfo)
+                        .map(BookingMapper::toBookingInfoDto)
                         .collect(Collectors.toList());
             }
         }

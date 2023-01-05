@@ -21,13 +21,13 @@ public class BookingMapper {
         );
     }
 
-    public static BookingInfoDto toBookingDtoInfo(@NotNull Booking booking) {
+    public static BookingInfoDto toBookingInfoDto(@NotNull Booking booking) {
         return new BookingInfoDto(
                 booking.getId(),
                 booking.getStart(),
                 booking.getEnd(),
                 booking.getStatus(),
-                ItemMapper.toItemShortDto(booking.getItem()),
+                ItemMapper.toItemDto(booking.getItem()),
                 UserMapper.toBookerDto(booking.getBooker())
         );
     }

@@ -26,7 +26,7 @@ public class ItemController {
 
     @GetMapping("/search")
     public List<ItemDto> findAllByText(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                        @RequestParam(value = "text") String text) {
+                                       @RequestParam(value = "text") String text) {
         log.info("Send get request /items/search?text={}", text);
         return itemService.findAllByText(userId, text);
     }

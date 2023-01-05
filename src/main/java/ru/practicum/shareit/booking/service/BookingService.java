@@ -19,7 +19,7 @@ public interface BookingService {
      * @param state Booking state.
      * @return List booking info dto.
      */
-    List<BookingInfoDto> findAllByBookerId(Long userId, String state);
+    List<BookingInfoDto> findAllByBookerId(Long userId, String state, Integer from, Integer size);
 
     /**
      * Find all booking by owner, sort desc start datetime.
@@ -27,7 +27,7 @@ public interface BookingService {
      * @param state Booking state.
      * @return List booking info dto.
      */
-    List<BookingInfoDto> findAllByItemOwnerId(Long userId, String state);
+    List<BookingInfoDto> findAllByItemOwnerId(Long userId, String state, Integer from, Integer size);
 
     /**
      * Create booking.

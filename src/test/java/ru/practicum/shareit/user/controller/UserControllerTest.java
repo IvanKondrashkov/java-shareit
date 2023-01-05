@@ -49,13 +49,24 @@ class UserControllerTest {
     @Test
     @DisplayName("Send GET request /users/{id}")
     void findById() throws Exception {
-        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/users/{id}", user.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber());
+
+        Mockito.verify(userRepository, Mockito.times(1)).findById(user.getId());
+    }
+
+    @Test
+    @DisplayName("Send GET request /users/{id}")
+    void findByNotValidId() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders
+                        .get("/users/{id}", user.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -68,6 +79,8 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
+
+        Mockito.verify(userRepository, Mockito.times(1)).findAll();
     }
 
     @Test
@@ -80,12 +93,14 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(gson.toJson(user)))
                 .andExpect(status().isOk());
+
+        Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
     }
 
     @Test
     @DisplayName("Send PATCH request /users/{id}")
     void update() throws Exception {
-        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         user.setName("Mike");
 
         this.mockMvc.perform(MockMvcRequestBuilders
@@ -94,16 +109,21 @@ class UserControllerTest {
                         .content(gson.toJson(user)))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Mike"));
+
+        Mockito.verify(userRepository, Mockito.times(1)).findById(user.getId());
+        Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
     }
 
     @Test
     @DisplayName("Send DELETE request users/{id}")
     void deleteById() throws Exception {
-        Mockito.when(userRepository.findById(Mockito.any())).thenReturn(Optional.ofNullable(user));
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .delete("/users/{id}", user.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+
+        Mockito.verify(userRepository, Mockito.times(1)).deleteById(user.getId());
     }
 }

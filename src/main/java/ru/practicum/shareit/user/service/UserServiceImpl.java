@@ -54,8 +54,8 @@ public class UserServiceImpl implements UserService {
         final User userWrap = userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", id))
         );
-        Optional.ofNullable(user.getName()).ifPresent(opt -> userWrap.setName(user.getName()));
-        Optional.ofNullable(user.getEmail()).ifPresent(opt -> userWrap.setEmail(user.getEmail()));
+        Optional.ofNullable(user.getName()).ifPresent(userWrap::setName);
+        Optional.ofNullable(user.getEmail()).ifPresent(userWrap::setEmail);
         try {
             userRepository.save(userWrap);
             return UserMapper.toUserDto(userWrap);

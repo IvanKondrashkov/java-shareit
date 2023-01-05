@@ -2,15 +2,15 @@ package ru.practicum.shareit.item.model;
 
 import lombok.*;
 import javax.persistence.*;
-import java.util.Set;
-import java.util.HashSet;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.request.model.ItemRequest;
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@Builder
 @Entity
 @Table(name = "items")
 public class Item {
@@ -26,8 +26,7 @@ public class Item {
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "comments", joinColumns = @JoinColumn(name = "item_id"))
-    @Column(name = "id")
-    private final Set<Long> comments = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "request_id")
+    private ItemRequest request;
 }

@@ -9,8 +9,7 @@ import java.util.Set;
 
 @Setter
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@Builder
 @ToString
 public class ItemDto {
     private Long id;
@@ -20,6 +19,7 @@ public class ItemDto {
     private String description;
     @NotNull(groups = {Create.class})
     private Boolean available;
+    private Long requestId;
     private BookingDto lastBooking;
     private BookingDto nextBooking;
     private Set<CommentInfoDto> comments;
