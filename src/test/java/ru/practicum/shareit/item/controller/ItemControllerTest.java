@@ -143,7 +143,7 @@ class ItemControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findAllByOwnerId(owner.getId());
+        Mockito.verify(itemRepository, Mockito.times(2)).findAllByOwnerId(owner.getId());
     }
 
     @Test

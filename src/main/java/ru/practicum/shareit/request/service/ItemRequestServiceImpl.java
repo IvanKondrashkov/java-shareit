@@ -1,8 +1,8 @@
 package ru.practicum.shareit.request.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -17,6 +17,8 @@ import ru.practicum.shareit.request.repo.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repo.UserRepository;
 import javax.persistence.EntityNotFoundException;
+import static java.util.stream.Collectors.*;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 @Service
 @RequiredArgsConstructor
@@ -43,9 +45,14 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
+        final List<ItemRequest> requests = requestRepository.findAllByRequestorId(userWrap.getId());
+
+        Map<Long, Set<Item>> items = itemRepository.findItemByRequestIn(requests).stream()
+                .collect(groupingBy(item -> item.getRequest().getId(), toSet()));
+
         return requestRepository.findAllByRequestorId(userWrap.getId()).stream()
-                .map(it -> ItemRequestMapper.toItemRequestDto(it, itemRepository.findAllByRequestId(it.getId())))
-                .collect(Collectors.toList());
+                .map(it -> ItemRequestMapper.toItemRequestDto(it, items.get(it.getId())))
+                .collect(toList());
     }
 
     @Override
@@ -53,10 +60,15 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        final MyPageRequest pageRequest = new MyPageRequest(from, size, Sort.by(Sort.Direction.DESC, "created"));
+        final MyPageRequest pageRequest = new MyPageRequest(from, size, Sort.by(DESC, "created"));
+        final List<ItemRequest> requests = requestRepository.findAllByRequestorIdNot(userWrap.getId(), pageRequest);
+
+        Map<Long, Set<Item>> items = itemRepository.findItemByRequestIn(requests).stream()
+                .collect(groupingBy(item -> item.getRequest().getId(), toSet()));
+
         return requestRepository.findAllByRequestorIdNot(userWrap.getId(), pageRequest).stream()
-                .map(it -> ItemRequestMapper.toItemRequestDto(it, itemRepository.findAllByRequestId(it.getId())))
-                .collect(Collectors.toList());
+                .map(it -> ItemRequestMapper.toItemRequestDto(it, items.get(it.getId())))
+                .collect(toList());
     }
 
     @Override

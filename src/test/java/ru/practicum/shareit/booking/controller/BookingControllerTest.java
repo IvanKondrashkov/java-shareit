@@ -119,7 +119,7 @@ class BookingControllerTest {
         Mockito.when(bookingRepository.findAllByBookerId(booker.getId(), pageRequest)).thenReturn(List.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .get("/bookings?state={state}&from={from}&size={size}", BookingState.PAST, 0, 10)
+                        .get("/bookings?state={state}&from={from}&size={size}", BookingState.ALL, 0, 10)
                         .header("X-Sharer-User-Id", booker.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -151,7 +151,7 @@ class BookingControllerTest {
         Mockito.when(bookingRepository.findAllByItemOwnerId(owner.getId(), pageRequest)).thenReturn(List.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
-                        .get("/bookings/owner?state={state}&from={from}&size={size}", BookingState.PAST, 0, 10)
+                        .get("/bookings/owner?state={state}&from={from}&size={size}", BookingState.ALL, 0, 10)
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -221,19 +221,12 @@ class BookingControllerTest {
     @DisplayName("Send PATCH request /bookings/{id}?approved={approved}")
     void updateByNotValidStatus() throws Exception {
         booking.setStatus(BookingStatus.CANCELED);
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        Mockito.when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .patch("/bookings/{id}?approved={approved}", booking.getId(), "null")
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
-        Mockito.verify(bookingRepository, Mockito.times(1)).findById(booking.getId());
     }
 
     @Test

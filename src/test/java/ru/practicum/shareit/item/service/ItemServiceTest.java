@@ -61,8 +61,6 @@ class ItemServiceTest {
     private ItemRequestRepository requestRepository;
     @InjectMocks
     private ItemServiceImpl itemService;
-    @Captor
-    private ArgumentCaptor<Item> captor;
 
     @BeforeEach
     void init() {
@@ -195,7 +193,7 @@ class ItemServiceTest {
         assertEquals(items.size(), 1);
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findAllByOwnerId(owner.getId());
+        Mockito.verify(itemRepository, Mockito.times(2)).findAllByOwnerId(owner.getId());
     }
 
     @Test
@@ -275,10 +273,7 @@ class ItemServiceTest {
         Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
 
         ItemDto dto = ItemMapper.toItemDto(newItem, request);
-        itemService.update(dto, owner.getId(), newItem.getId());
-
-        Mockito.verify(itemRepository).save(captor.capture());
-        Item savedItem = captor.getValue();
+        ItemDto savedItem = itemService.update(dto, owner.getId(), newItem.getId());
 
         assertEquals(savedItem.getId(), newItem.getId());
         assertEquals(savedItem.getName(), newItem.getName());

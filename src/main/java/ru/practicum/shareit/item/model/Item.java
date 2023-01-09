@@ -7,10 +7,10 @@ import ru.practicum.shareit.request.model.ItemRequest;
 
 @Setter
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
+@Builder(toBuilder = true)
 @ToString
-@Builder
 @Entity
 @Table(name = "items")
 public class Item {
@@ -23,10 +23,12 @@ public class Item {
     private String description;
     @Column(name = "is_available", nullable = false)
     private Boolean available;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
+    @ToString.Exclude
     private User owner;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "request_id")
+    @ToString.Exclude
     private ItemRequest request;
 }

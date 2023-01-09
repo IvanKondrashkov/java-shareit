@@ -124,7 +124,7 @@ class ItemRequestServiceTest {
         assertEquals(requests.size(), 1);
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(requestor.getId());
-        Mockito.verify(requestRepository, Mockito.times(1)).findAllByRequestorId(requestor.getId());
+        Mockito.verify(requestRepository, Mockito.times(2)).findAllByRequestorId(requestor.getId());
     }
 
     @ParameterizedTest
@@ -151,7 +151,7 @@ class ItemRequestServiceTest {
         assertEquals(requests.size(), 1);
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(requestRepository, Mockito.times(1)).findAllByRequestorIdNot(owner.getId(), pageRequest);
+        Mockito.verify(requestRepository, Mockito.times(2)).findAllByRequestorIdNot(owner.getId(), pageRequest);
     }
 
     @ParameterizedTest

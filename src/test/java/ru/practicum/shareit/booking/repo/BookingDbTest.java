@@ -137,7 +137,7 @@ public class BookingDbTest {
 
         Booking newBooking = new Booking(booking.getId(), LocalDateTime.now(), LocalDateTime.now().plusDays(5), BookingStatus.APPROVED, item, booker);
         dto = makeBooking(newBooking);
-        dto = bookingService.update(owner.getId(), dto.getId(), "true");
+        dto = bookingService.update(owner.getId(), dto.getId(), true);
 
         assertThat(newBooking.getId()).isNotNull();
         assertThat(newBooking.getStart()).isBefore(LocalDateTime.now());

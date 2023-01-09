@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking;
 
-import javax.validation.constraints.NotNull;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.user.model.User;
@@ -10,8 +11,9 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingInfoDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BookingMapper {
-    public static BookingDto toBookingDto(@NotNull Booking booking) {
+    public static BookingDto toBookingDto(Booking booking) {
         return new BookingDto(
                 booking.getId(),
                 booking.getStart(),
@@ -21,7 +23,7 @@ public class BookingMapper {
         );
     }
 
-    public static BookingInfoDto toBookingInfoDto(@NotNull Booking booking) {
+    public static BookingInfoDto toBookingInfoDto(Booking booking) {
         return new BookingInfoDto(
                 booking.getId(),
                 booking.getStart(),
@@ -32,7 +34,7 @@ public class BookingMapper {
         );
     }
 
-    public static Booking toBooking(@NotNull BookingDto bookingDto, @NotNull BookingStatus status, @NotNull Item item, @NotNull User booker) {
+    public static Booking toBooking(BookingDto bookingDto, BookingStatus status, Item item, User booker) {
         return new Booking(
                 bookingDto.getId(),
                 bookingDto.getStart(),

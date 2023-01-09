@@ -44,7 +44,7 @@ public interface BookingService {
      * @param approved The parameter can take true or false.
      * @return BookingInfoDto.
      */
-    BookingInfoDto update(Long userId, Long id, String approved);
+    BookingInfoDto update(Long userId, Long id, Boolean approved);
 
     /**
      * Delete booking by id.

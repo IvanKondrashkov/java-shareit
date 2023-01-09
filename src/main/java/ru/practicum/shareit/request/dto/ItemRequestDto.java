@@ -15,7 +15,7 @@ public class ItemRequestDto {
     private Long id;
     @NotBlank(groups = {Create.class})
     private String description;
-    @FutureOrPresent(groups = {Create.class})
+    @FutureOrPresent
     private LocalDateTime created;
     private Set<ItemDto> items;
 }

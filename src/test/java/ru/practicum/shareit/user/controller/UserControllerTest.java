@@ -111,7 +111,6 @@ class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Mike"));
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(user.getId());
-        Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
     }
 
     @Test

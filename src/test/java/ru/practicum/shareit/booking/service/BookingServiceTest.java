@@ -3,6 +3,7 @@ package ru.practicum.shareit.booking.service;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,8 +46,6 @@ class BookingServiceTest {
     private BookingRepository bookingRepository;
     @InjectMocks
     private BookingServiceImpl bookingService;
-    @Captor
-    private ArgumentCaptor<Booking> captor;
 
     @BeforeEach
     void init() {
@@ -59,8 +58,7 @@ class BookingServiceTest {
                 .available(true)
                 .owner(owner)
                 .build();
-        booking = new Booking(1L, LocalDateTime.now(), LocalDateTime.now().plusDays(2), BookingStatus.WAITING, item,
-                booker);
+        booking = new Booking(1L, LocalDateTime.now(), LocalDateTime.now().plusDays(2), BookingStatus.WAITING, item, booker);
     }
 
     @AfterEach
@@ -142,27 +140,47 @@ class BookingServiceTest {
     @EnumSource(BookingState.class)
     void findAllByBookerId(BookingState state) {
         MyPageRequest pageRequest = new MyPageRequest(0, 10, Sort.by(Sort.Direction.DESC, "start"));
+        LocalDateTime currentTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+        Mockito.when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
         switch (state) {
+            case CURRENT: {
+                Mockito.when(bookingRepository.findAllByBookerIdAndStartIsBeforeAndEndIsAfter(booker.getId(), currentTime,
+                        currentTime, pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
             case PAST: {
                 booking.setEnd(LocalDateTime.now().minusDays(5));
+                Mockito.when(bookingRepository.findAllByBookerIdAndEndIsBefore(booker.getId(), currentTime,
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
             }
             case FUTURE: {
                 booking.setStart(LocalDateTime.now().plusDays(5));
+                Mockito.when(bookingRepository.findAllByBookerIdAndStartIsAfter(booker.getId(), currentTime,
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
+            case WAITING: {
+                Mockito.when(bookingRepository.findAllByBookerIdAndStatusEquals(booker.getId(), booking.getStatus(),
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
             }
             case REJECTED: {
                 booking.setStatus(BookingStatus.REJECTED);
+                Mockito.when(bookingRepository.findAllByBookerIdAndStatusEquals(booker.getId(), booking.getStatus(),
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
+            case ALL: {
+                Mockito.when(bookingRepository.findAllByBookerId(booker.getId(), pageRequest)).thenReturn(List.of(booking));
+                break;
             }
         }
-
-        Mockito.when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
-        Mockito.when(bookingRepository.findAllByBookerId(booker.getId(), pageRequest)).thenReturn(List.of(booking));
 
         List<BookingInfoDto> bookings = bookingService.findAllByBookerId(booker.getId(), state.name(), 0, 10);
 
         assertEquals(bookings.size(), 1);
-
-        Mockito.verify(userRepository, Mockito.times(1)).findById(booker.getId());
-        Mockito.verify(bookingRepository, Mockito.times(1)).findAllByBookerId(booker.getId(), pageRequest);
     }
 
     @ParameterizedTest
@@ -199,27 +217,47 @@ class BookingServiceTest {
     @EnumSource(BookingState.class)
     void findAllByItemOwnerId(BookingState state) {
         MyPageRequest pageRequest = new MyPageRequest(0, 10, Sort.by(Sort.Direction.DESC, "start"));
+        LocalDateTime currentTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
         switch (state) {
+            case CURRENT: {
+                Mockito.when(bookingRepository.findAllByItemOwnerIdAndStartIsBeforeAndEndIsAfter(owner.getId(), currentTime,
+                        currentTime, pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
             case PAST: {
-                booking.setEnd(LocalDateTime.now().minusDays(5));
+                booking.setEnd(currentTime.minusDays(5));
+                Mockito.when(bookingRepository.findAllByItemOwnerIdAndEndIsBefore(owner.getId(), currentTime,
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
             }
             case FUTURE: {
-                booking.setStart(LocalDateTime.now().plusDays(5));
+                booking.setStart(currentTime.plusDays(5));
+                Mockito.when(bookingRepository.findAllByItemOwnerIdAndStartIsAfter(owner.getId(), currentTime,
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
+            case WAITING: {
+                Mockito.when(bookingRepository.findAllByItemOwnerIdAndStatusEquals(owner.getId(), booking.getStatus(),
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
             }
             case REJECTED: {
                 booking.setStatus(BookingStatus.REJECTED);
+                Mockito.when(bookingRepository.findAllByItemOwnerIdAndStatusEquals(owner.getId(), booking.getStatus(),
+                        pageRequest)).thenReturn(List.of(booking));
+                break;
+            }
+            case ALL: {
+                Mockito.when(bookingRepository.findAllByItemOwnerId(owner.getId(), pageRequest)).thenReturn(List.of(booking));
+                break;
             }
         }
 
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(bookingRepository.findAllByItemOwnerId(owner.getId(), pageRequest)).thenReturn(List.of(booking));
-
-        List<BookingInfoDto> bookings = bookingService.findAllByItemOwnerId(owner.getId(), BookingState.ALL.name(), 0, 10);
+        List<BookingInfoDto> bookings = bookingService.findAllByItemOwnerId(owner.getId(), state.name(), 0, 10);
 
         assertEquals(bookings.size(), 1);
-
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(bookingRepository, Mockito.times(1)).findAllByItemOwnerId(owner.getId(), pageRequest);
     }
 
     @ParameterizedTest
@@ -342,22 +380,19 @@ class BookingServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"false", "true"})
-    void update(String approved) {
+    @ValueSource(booleans = {false, true})
+    void update(Boolean approved) {
         Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
         Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
         Mockito.when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
-        bookingService.update(owner.getId(), booking.getId(), approved);
-
-        Mockito.verify(bookingRepository).save(captor.capture());
-        Booking savedBooking = captor.getValue();
+        BookingInfoDto savedBooking = bookingService.update(owner.getId(), booking.getId(), approved);
 
         assertEquals(savedBooking.getId(), booking.getId());
         assertEquals(savedBooking.getStart(), booking.getStart());
         assertEquals(savedBooking.getEnd(), booking.getEnd());
 
-        if (Boolean.parseBoolean(approved) && booking.getStatus() == BookingStatus.WAITING) {
+        if (approved && booking.getStatus() == BookingStatus.WAITING) {
             assertEquals(savedBooking.getStatus(), BookingStatus.APPROVED);
         } else if (booking.getStatus() == BookingStatus.WAITING) {
             assertEquals(savedBooking.getStatus(), BookingStatus.REJECTED);
@@ -372,7 +407,7 @@ class BookingServiceTest {
     @ValueSource(longs = {11, 12, 32, 999})
     void updateByNotValidUserId(Long userId) {
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-            bookingService.update(userId, booking.getId(), "false");
+            bookingService.update(userId, booking.getId(), false);
         });
 
         String expectedMessage = exception.getMessage();
@@ -388,7 +423,7 @@ class BookingServiceTest {
         Mockito.when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         UserConflictException exception = assertThrows(UserConflictException.class, () -> {
-            bookingService.update(booker.getId(), booking.getId(), "false");
+            bookingService.update(booker.getId(), booking.getId(), false);
         });
 
         String expectedMessage = exception.getMessage();
@@ -407,7 +442,7 @@ class BookingServiceTest {
         Mockito.when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-            bookingService.update(owner.getId(), booking.getId(), "false");
+            bookingService.update(owner.getId(), booking.getId(), false);
         });
 
         String expectedMessage = exception.getMessage();
@@ -424,7 +459,7 @@ class BookingServiceTest {
         Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
 
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-            bookingService.update(owner.getId(), booking.getId(), "false");
+            bookingService.update(owner.getId(), booking.getId(), false);
         });
 
         String expectedMessage = exception.getMessage();

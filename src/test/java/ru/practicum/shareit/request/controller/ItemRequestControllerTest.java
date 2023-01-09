@@ -109,7 +109,7 @@ class ItemRequestControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(requestor.getId());
-        Mockito.verify(requestRepository, Mockito.times(1)).findAllByRequestorId(requestor.getId());
+        Mockito.verify(requestRepository, Mockito.times(2)).findAllByRequestorId(requestor.getId());
     }
 
     @Test
@@ -127,7 +127,7 @@ class ItemRequestControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
 
         Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(requestRepository, Mockito.times(1)).findAllByRequestorIdNot(owner.getId(), pageRequest);
+        Mockito.verify(requestRepository, Mockito.times(2)).findAllByRequestorIdNot(owner.getId(), pageRequest);
     }
 
     @Test

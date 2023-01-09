@@ -5,14 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.repo.UserRepository;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
-import org.springframework.dao.DataIntegrityViolationException;
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -32,19 +30,15 @@ public class UserServiceImpl implements UserService {
     public List<UserDto> findAll() {
         return userRepository.findAll().stream()
                 .map(UserMapper::toUserDto)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override
     @Transactional
     public UserDto save(UserDto userDto) {
         final User user = UserMapper.toUser(userDto);
-        try {
-            final User userWrap = userRepository.save(user);
-            return UserMapper.toUserDto(userWrap);
-        } catch (DataIntegrityViolationException e) {
-            throw new EntityExistsException(String.format("User with the email=%s already exists", user.getEmail()));
-        }
+        final User userWrap = userRepository.save(user);
+        return UserMapper.toUserDto(userWrap);
     }
 
     @Override
@@ -54,14 +48,13 @@ public class UserServiceImpl implements UserService {
         final User userWrap = userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", id))
         );
-        Optional.ofNullable(user.getName()).ifPresent(userWrap::setName);
-        Optional.ofNullable(user.getEmail()).ifPresent(userWrap::setEmail);
-        try {
-            userRepository.save(userWrap);
-            return UserMapper.toUserDto(userWrap);
-        } catch (DataIntegrityViolationException e) {
-            throw new EntityExistsException(String.format("User with the email=%s already exists", user.getEmail()));
-        }
+        Optional.ofNullable(user.getName()).ifPresent(it -> {
+            if (!user.getName().isBlank()) userWrap.setName(user.getName());
+        });
+        Optional.ofNullable(user.getEmail()).ifPresent(it -> {
+            if (!user.getEmail().isBlank()) userWrap.setEmail(user.getEmail());
+        });
+        return UserMapper.toUserDto(userWrap);
     }
 
     @Override

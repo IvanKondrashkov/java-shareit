@@ -1,11 +1,11 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -28,6 +28,8 @@ import ru.practicum.shareit.user.repo.UserRepository;
 import javax.persistence.EntityNotFoundException;
 import ru.practicum.shareit.exception.UserConflictException;
 import ru.practicum.shareit.exception.CommentForbiddenException;
+import static java.util.stream.Collectors.*;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 @Service
 @RequiredArgsConstructor
@@ -61,10 +63,13 @@ public class ItemServiceImpl implements ItemService {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        List<ItemDto> items = itemRepository.findAllByText(text).stream()
-                .map(it -> ItemMapper.toItemDto(it, commentRepository.findAllByItemId(it.getId())))
-                .collect(Collectors.toList());
-        return text.isBlank() ? List.of() : items;
+        final List<Item> items = itemRepository.findAllByOwnerId(userId);
+        Map<Long, Set<Comment>> comments = commentRepository.findByItemIn(items, Sort.by(DESC, "created")).stream()
+                .collect(groupingBy(comment -> comment.getItem().getId(), toSet()));
+
+        return itemRepository.findAllByText(text).stream()
+                .map(it -> ItemMapper.toItemDto(it, comments.get(it.getId())))
+                .collect(toList());
     }
 
     @Override
@@ -90,19 +95,29 @@ public class ItemServiceImpl implements ItemService {
                 return lb1.getStart().compareTo(lb2.getStart());
             }
         };
+        final List<Item> items = itemRepository.findAllByOwnerId(userId);
+        Map<Long, Set<Comment>> comments = commentRepository.findByItemIn(items, Sort.by(DESC, "created"))
+                .stream()
+                .collect(groupingBy(comment -> comment.getItem().getId(), toSet()));
+
+        Map<Long, List<Booking>> bookings = bookingRepository.findByItemIn(items, Sort.by(DESC, "start"))
+                .stream()
+                .collect(groupingBy(booking -> booking.getItem().getId(), toList()));
+
         return itemRepository.findAllByOwnerId(userWrap.getId()).stream()
-                .map(it -> ItemMapper.toItemDto(it, commentRepository.findAllByItemId(it.getId())))
+                .map(it -> ItemMapper.toItemDto(it, comments.get(it.getId())))
                 .peek(it -> {
-                    final List<Booking> bookings = bookingRepository.findAllByItemId(it.getId());
-                    final Booking lastBooking = findBookingByStatePastOrFuture(BookingState.PAST, bookings);
-                    final Booking nextBooking = findBookingByStatePastOrFuture(BookingState.FUTURE, bookings);
+                    final Booking lastBooking = bookings.get(it.getId()) == null ? null :
+                            findBookingByStatePastOrFuture(BookingState.PAST, bookings.get(it.getId()));
+                    final Booking nextBooking = bookings.get(it.getId()) == null ? null :
+                            findBookingByStatePastOrFuture(BookingState.FUTURE, bookings.get(it.getId()));
                     if (lastBooking != null && nextBooking != null) {
                         it.setLastBooking(BookingMapper.toBookingDto(lastBooking));
                         it.setNextBooking(BookingMapper.toBookingDto(nextBooking));
                     }
                 })
                 .sorted(comparator)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override
@@ -137,11 +152,14 @@ public class ItemServiceImpl implements ItemService {
             );
         }
         final Item item = ItemMapper.toItem(itemDto, userWrap);
-        Optional.ofNullable(item.getName()).ifPresent(itemWrap::setName);
-        Optional.ofNullable(item.getDescription()).ifPresent(itemWrap::setDescription);
+        Optional.ofNullable(item.getName()).ifPresent(it -> {
+            if (!item.getName().isBlank()) itemWrap.setName(item.getName());
+        });
+        Optional.ofNullable(item.getDescription()).ifPresent(it -> {
+            if (!item.getDescription().isBlank()) itemWrap.setDescription(item.getDescription());
+        });
         Optional.ofNullable(item.getAvailable()).ifPresent(itemWrap::setAvailable);
         final Set<Comment> comments = commentRepository.findAllByItemId(itemWrap.getId());
-        itemRepository.save(itemWrap);
         return ItemMapper.toItemDto(itemWrap, comments);
     }
 

@@ -24,8 +24,6 @@ class UserServiceTest {
     private UserRepository userRepository;
     @InjectMocks
     private UserServiceImpl userService;
-    @Captor
-    private ArgumentCaptor<User> captor;
 
     @BeforeEach
     void init() {
@@ -94,10 +92,7 @@ class UserServiceTest {
         Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         UserDto dto = UserMapper.toUserDto(newUser);
-        userService.update(dto, newUser.getId());
-
-        Mockito.verify(userRepository).save(captor.capture());
-        User savedUser = captor.getValue();
+        UserDto savedUser = userService.update(dto, newUser.getId());
 
         assertEquals(savedUser.getId(), newUser.getId());
         assertEquals(savedUser.getName(), newUser.getName());

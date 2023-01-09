@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.TypedQuery;
 import javax.persistence.EntityManager;
@@ -14,11 +15,9 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.service.UserService;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
@@ -79,14 +78,11 @@ public class UserDbTest {
     @Test
     void saveByEmailExists() {
         UserDto dto = makeUser(user);
-        EntityExistsException exception = assertThrows(EntityExistsException.class, () -> {
+        DataIntegrityViolationException exception = assertThrows(DataIntegrityViolationException.class, () -> {
             makeUser(user);
         });
 
-        String expectedMessage = exception.getMessage();
-        String actualMessage = String.format("User with the email=%s already exists", user.getEmail());
-
-        assertEquals(expectedMessage, actualMessage);
+        assertNotNull(exception.getMessage());
     }
 
     @Test
