@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.controller;
 
 import java.util.List;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -26,9 +27,9 @@ public class ItemController {
 
     @GetMapping("/search")
     public List<ItemDto> findAllByText(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                        @RequestParam(value = "text") String text) {
+                                       @RequestParam(value = "text") String text) {
         log.info("Send get request /items/search?text={}", text);
-        return itemService.findAllByText(userId, text);
+        return text.isBlank() ? Collections.emptyList() : itemService.findAllByText(userId, text);
     }
 
     @GetMapping

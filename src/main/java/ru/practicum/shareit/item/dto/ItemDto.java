@@ -1,16 +1,15 @@
 package ru.practicum.shareit.item.dto;
 
 import lombok.*;
-import ru.practicum.shareit.booking.dto.BookingDto;
-import ru.practicum.shareit.marker.Create;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.NotBlank;
-import java.util.Set;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.marker.Create;
 
 @Setter
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@Builder
 @ToString
 public class ItemDto {
     private Long id;
@@ -20,6 +19,7 @@ public class ItemDto {
     private String description;
     @NotNull(groups = {Create.class})
     private Boolean available;
+    private Long requestId;
     private BookingDto lastBooking;
     private BookingDto nextBooking;
     private Set<CommentInfoDto> comments;

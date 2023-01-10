@@ -3,8 +3,8 @@ package ru.practicum.shareit.booking.dto;
 import lombok.*;
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.BookerDto;
-import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
 
 @Setter
@@ -23,7 +23,7 @@ public class BookingInfoDto {
     @NotNull
     private BookingStatus status;
     @NotNull
-    private ItemShortDto item;
+    private ItemDto item;
     @NotNull
     private BookerDto booker;
 }

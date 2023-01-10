@@ -15,7 +15,7 @@ public interface ItemService {
     ItemDto findById(Long userId, Long id);
 
     /**
-     * Find items dto by key word, flag available = true.
+     * Find all items by key word, flag available = true.
      * @param userId User id, owner item.
      * @param text Key word.
      * @return List item dto.
@@ -23,7 +23,7 @@ public interface ItemService {
     List<ItemDto> findAllByText(Long userId, String text);
 
     /**
-     * Find all items dto by user id.
+     * Find all items by user id.
      * @param userId User id, owner item.
      * @return List item dto.
      */
@@ -47,7 +47,7 @@ public interface ItemService {
     ItemDto update(ItemDto itemDto, Long userId, Long id);
 
     /**
-     * Delete item dto by id. Only the owner can delete it.
+     * Delete item by id. Only the owner can delete it.
      * @param userId User id, owner item.
      * @param id Item id.
      */

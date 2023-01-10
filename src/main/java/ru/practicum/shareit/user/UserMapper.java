@@ -1,12 +1,14 @@
 package ru.practicum.shareit.user;
 
-import javax.validation.constraints.NotNull;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.BookerDto;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserMapper {
-    public static UserDto toUserDto(@NotNull User user) {
+    public static UserDto toUserDto(User user) {
         return new UserDto(
                 user.getId(),
                 user.getName(),
@@ -14,13 +16,13 @@ public class UserMapper {
         );
     }
 
-    public static BookerDto toBookerDto(@NotNull User user) {
+    public static BookerDto toBookerDto(User user) {
         return new BookerDto(
                 user.getId()
         );
     }
 
-    public static User toUser(@NotNull UserDto userDto) {
+    public static User toUser(UserDto userDto) {
         return new User(
                 userDto.getId(),
                 userDto.getName(),
