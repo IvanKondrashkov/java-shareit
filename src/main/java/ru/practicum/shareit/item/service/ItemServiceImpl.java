@@ -1,15 +1,16 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.time.LocalDateTime;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repo.BookingRepository;
 import ru.practicum.shareit.exception.BookingStateExistsException;
 import ru.practicum.shareit.item.model.Comment;
@@ -40,6 +41,7 @@ public class ItemServiceImpl implements ItemService {
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
     private final ItemRequestRepository requestRepository;
+    private static final Comparator<ItemDto> COMPARATOR = newInstance();
 
     @Override
     public ItemDto findById(Long userId, Long id) {
@@ -77,30 +79,12 @@ public class ItemServiceImpl implements ItemService {
         final User userWrap = userRepository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(String.format("User with id=%d not found!", userId))
         );
-        Comparator<ItemDto> comparator = new Comparator<ItemDto>() {
-            @Override
-            public int compare(ItemDto o1, ItemDto o2) {
-                final BookingDto lb1 = o1.getLastBooking();
-                final BookingDto lb2 = o2.getLastBooking();
-
-                if (lb1 == null && lb2 == null) {
-                    return 0;
-                }
-                if (lb1 == null) {
-                    return 1;
-                }
-                if (lb2 == null) {
-                    return -1;
-                }
-                return lb1.getStart().compareTo(lb2.getStart());
-            }
-        };
         final List<Item> items = itemRepository.findAllByOwnerId(userId);
         Map<Long, Set<Comment>> comments = commentRepository.findByItemIn(items, Sort.by(DESC, "created"))
                 .stream()
                 .collect(groupingBy(comment -> comment.getItem().getId(), toSet()));
 
-        Map<Long, List<Booking>> bookings = bookingRepository.findByItemIn(items, Sort.by(DESC, "start"))
+        Map<Long, List<Booking>> bookings = bookingRepository.findByItemInAndStatusEquals(items, BookingStatus.APPROVED, Sort.by(DESC, "start"))
                 .stream()
                 .collect(groupingBy(booking -> booking.getItem().getId(), toList()));
 
@@ -116,7 +100,7 @@ public class ItemServiceImpl implements ItemService {
                         it.setNextBooking(BookingMapper.toBookingDto(nextBooking));
                     }
                 })
-                .sorted(comparator)
+                .sorted(COMPARATOR)
                 .collect(toList());
     }
 
@@ -203,7 +187,7 @@ public class ItemServiceImpl implements ItemService {
         switch (state) {
             case PAST: {
                 return bookings.stream()
-                        .filter(it -> it.getStart().isBefore(currentTime))
+                        .filter(it -> it.getStart().isBefore(currentTime) || it.getStart().isEqual(currentTime))
                         .findFirst().orElse(null);
             }
             case FUTURE: {
@@ -215,5 +199,26 @@ public class ItemServiceImpl implements ItemService {
                 throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
             }
         }
+    }
+
+    private static Comparator<ItemDto> newInstance() {
+        return new Comparator<ItemDto>() {
+            @Override
+            public int compare(ItemDto o1, ItemDto o2) {
+                final BookingDto lb1 = o1.getLastBooking();
+                final BookingDto lb2 = o2.getLastBooking();
+
+                if (lb1 == null && lb2 == null) {
+                    return 0;
+                }
+                if (lb1 == null) {
+                    return 1;
+                }
+                if (lb2 == null) {
+                    return -1;
+                }
+                return lb1.getStart().compareTo(lb2.getStart());
+            }
+        };
     }
 }

@@ -1,70 +1,68 @@
 package ru.practicum.shareit.item.controller;
 
 import java.util.List;
-import java.util.Optional;
 import java.time.LocalDateTime;
 import org.mockito.Mockito;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repo.BookingRepository;
 import ru.practicum.shareit.item.model.Comment;
-import ru.practicum.shareit.item.repo.CommentRepository;
+import ru.practicum.shareit.item.CommentMapper;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentInfoDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repo.ItemRepository;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repo.UserRepository;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.ItemMapper;
+import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import javax.persistence.EntityNotFoundException;
+import ru.practicum.shareit.exception.UserConflictException;
+import ru.practicum.shareit.exception.CommentForbiddenException;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(ItemController.class)
 class ItemControllerTest {
-    private User owner;
-    private User booker;
+    private UserDto owner;
+    private UserDto booker;
     private Item item;
-    private Booking booking;
+    private ItemDto dto;
     private Comment comment;
+    private CommentInfoDto commentInfoDto;
     private Gson gson;
     @Autowired
     private MockMvc mockMvc;
     @MockBean
-    private UserRepository userRepository;
-    @MockBean
-    private ItemRepository itemRepository;
-    @MockBean
-    private BookingRepository bookingRepository;
-    @MockBean
-    private CommentRepository commentRepository;
+    private ItemService itemService;
 
     @BeforeEach
     void init() {
-        owner = new User(1L, "Nikolas", "nik@mail.ru");
-        booker = new User(2L, "Djon", "djony@mail.ru");
+        owner = new UserDto(1L, "Nikolas", "nik@mail.ru");
+        booker = new UserDto(2L, "Djon", "djony@mail.ru");
         item = Item.builder()
                 .id(1L)
                 .name("Drill")
                 .description("Cordless drill")
                 .available(true)
-                .owner(owner)
+                .owner(UserMapper.toUser(owner))
                 .build();
-        booking = new Booking(1L, LocalDateTime.now().minusDays(15), LocalDateTime.now().minusDays(10), BookingStatus.APPROVED, item, booker);
-        comment = new Comment(1L, "Good drill!", LocalDateTime.now(), item, booker);
+        comment = new Comment(1L, "Good drill!", LocalDateTime.now(), item, UserMapper.toUser(booker));
         gson = new GsonBuilder()
                 .serializeNulls()
                 .create();
+        dto = ItemMapper.toItemDto(item);
+        commentInfoDto = CommentMapper.toCommentInfoDto(comment);
     }
 
     @AfterEach
@@ -72,20 +70,16 @@ class ItemControllerTest {
         owner = null;
         booker = null;
         item = null;
-        booking = null;
         comment = null;
         gson = null;
-        userRepository.deleteAll();
-        itemRepository.deleteAll();
-        bookingRepository.deleteAll();
-        commentRepository.deleteAll();
+        dto = null;
+        commentInfoDto = null;
     }
 
     @Test
     @DisplayName("Send GET request /items/{id}")
     void findById() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        Mockito.when(itemService.findById(owner.getId(), item.getId())).thenReturn(dto);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/items/{id}", item.getId())
@@ -94,14 +88,14 @@ class ItemControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
+
+        Mockito.verify(itemService, Mockito.times(1)).findById(owner.getId(), item.getId());
     }
 
     @Test
     @DisplayName("Send GET request /items/{id}")
     void findByNotValidId() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
+        Mockito.when(itemService.findById(owner.getId(), item.getId())).thenThrow(EntityNotFoundException.class);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/items/{id}", item.getId())
@@ -109,15 +103,14 @@ class ItemControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
+        Mockito.verify(itemService, Mockito.times(1)).findById(owner.getId(), item.getId());
     }
 
     @Test
     @DisplayName("Send GET request /items/search?text={text}")
     void findAllByText() throws Exception {
         final String text = "Drill";
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findAllByText(text)).thenReturn(List.of(item));
+        Mockito.when(itemService.findAllByText(owner.getId(), text)).thenReturn(List.of(dto));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/items/search?text={text}", text)
@@ -125,15 +118,13 @@ class ItemControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findAllByText(text);
+        Mockito.verify(itemService, Mockito.times(1)).findAllByText(owner.getId(), text);
     }
 
     @Test
     @DisplayName("Send GET request /items")
     void findAll() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findAllByOwnerId(owner.getId())).thenReturn(List.of(item));
+        Mockito.when(itemService.findAll(owner.getId())).thenReturn(List.of(dto));
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .get("/items")
@@ -142,120 +133,102 @@ class ItemControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").isNumber());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(2)).findAllByOwnerId(owner.getId());
+        Mockito.verify(itemService, Mockito.times(1)).findAll(owner.getId());
     }
 
     @Test
     @DisplayName("Send POST request /items")
     void save() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.save(Mockito.any())).thenReturn(item);
+        dto = ItemMapper.toItemDto(item, new ItemRequest());
+        Mockito.when(itemService.save(Mockito.any(), Mockito.anyLong())).thenReturn(dto);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .post("/items")
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(item)))
+                        .content(gson.toJson(dto)))
                 .andExpect(status().isOk());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).save(Mockito.any());
+        Mockito.verify(itemService, Mockito.times(1)).save(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
     @DisplayName("Send POST request /items/{id}/comment")
     void saveComment() throws Exception {
-        Mockito.when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        Mockito.when(bookingRepository.findAllByItemId(item.getId())).thenReturn(List.of(booking));
-        Mockito.when(commentRepository.save(Mockito.any())).thenReturn(comment);
+        CommentDto commentDto = CommentMapper.toCommentDto(comment);
+        Mockito.when(itemService.saveComment(Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(commentInfoDto);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .post("/items/{id}/comment", item.getId())
                         .header("X-Sharer-User-Id", booker.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(comment)))
+                        .content(gson.toJson(commentDto)))
                 .andExpect(status().isOk());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(booker.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
-        Mockito.verify(bookingRepository, Mockito.times(1)).findAllByItemId(item.getId());
-        Mockito.verify(commentRepository, Mockito.times(1)).save(Mockito.any());
+        Mockito.verify(itemService, Mockito.times(1)).saveComment(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
     @DisplayName("Send POST request /items/{id}/comment")
     void saveCommentByNotBooker() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        Mockito.when(bookingRepository.findAllByItemId(item.getId())).thenReturn(List.of(booking));
+        CommentDto commentDto = CommentMapper.toCommentDto(comment);
+        Mockito.when(itemService.saveComment(Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenThrow(CommentForbiddenException.class);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .post("/items/{id}/comment", item.getId())
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(comment)))
+                        .content(gson.toJson(commentDto)))
                 .andExpect(status().isBadRequest());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
-        Mockito.verify(bookingRepository, Mockito.times(1)).findAllByItemId(item.getId());
+        Mockito.verify(itemService, Mockito.times(1)).saveComment(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
     @DisplayName("Send PATCH request /items/{id}")
     void update() throws Exception {
-        item.setName("Drill 2000");
-        item.setAvailable(false);
-        item.setDescription("Very good drill!");
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        dto.setName("Drill 2000");
+        dto.setAvailable(false);
+        dto.setDescription("Very good drill!");
+        Mockito.when(itemService.update(Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(dto);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .patch("/items/{id}", item.getId())
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(item)))
+                        .content(gson.toJson(dto)))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Drill 2000"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.available").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.description").value("Very good drill!"));
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
+        Mockito.verify(itemService, Mockito.times(1)).update(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
     @DisplayName("Send PATCH request /items/{id}")
     void updateByNotOwner() throws Exception {
-        Mockito.when(userRepository.findById(2L)).thenReturn(Optional.of(new User()));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        Mockito.when(itemService.update(Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenThrow(UserConflictException.class);
 
         this.mockMvc.perform(MockMvcRequestBuilders
                         .patch("/items/{id}", item.getId())
                         .header("X-Sharer-User-Id", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(gson.toJson(item)))
+                        .content(gson.toJson(dto)))
                 .andExpect(status().isNotFound());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(2L);
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
+        Mockito.verify(itemService, Mockito.times(1)).update(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
     @DisplayName("Send DELETE request items/{id}")
     void deleteById() throws Exception {
-        Mockito.when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
-        Mockito.when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-
         this.mockMvc.perform(MockMvcRequestBuilders
                         .delete("/items/{id}", item.getId())
                         .header("X-Sharer-User-Id", owner.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        Mockito.verify(userRepository, Mockito.times(1)).findById(owner.getId());
-        Mockito.verify(itemRepository, Mockito.times(1)).findById(item.getId());
+        Mockito.verify(itemService, Mockito.times(1)).deleteById(owner.getId(), item.getId());
     }
 }
