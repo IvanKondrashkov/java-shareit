@@ -193,7 +193,7 @@ public class ItemServiceImpl implements ItemService {
             case FUTURE: {
                 return bookings.stream()
                         .filter(it -> it.getStart().isAfter(currentTime))
-                        .findFirst().orElse(null);
+                        .min(Comparator.comparing(Booking::getStart)).orElse(null);
             }
             default: {
                 throw new BookingStateExistsException("Unknown state: UNSUPPORTED_STATUS");
