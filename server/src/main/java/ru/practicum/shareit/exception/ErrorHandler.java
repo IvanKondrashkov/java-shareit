@@ -76,7 +76,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler(Throwable.class)
-    public ResponseEntity<ErrorResponse> handleInternalServerError(final Throwable e) {
+    public ResponseEntity<ErrorResponse> handle(final Throwable e) {
         log.error(e.getMessage(), e);
         final ErrorResponse errorResponse = new ErrorResponse(e.getMessage(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity

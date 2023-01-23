@@ -30,8 +30,8 @@ public class ItemJsonTest {
             .create();
     private static final User OWNER = new User(1L, "Nikolas", "nik@mail.ru");
     private static final User REQUESTOR = new User(2L, "Bob", "bob@mail.ru");
-    private static final ItemRequest REQUEST = new ItemRequest(1L, "Drill 2000 MaxPro", LocalDateTime.now(),
-            REQUESTOR);
+    private static final ItemRequest REQUEST = new ItemRequest(
+            1L, "Drill 2000 MaxPro", LocalDateTime.now(), REQUESTOR);
     private static final Item ITEM = Item.builder()
             .id(1L)
             .name("Drill")

@@ -26,8 +26,8 @@ public class ItemRequestJsonTest {
             .serializeNulls()
             .create();
     private static final User REQUESTOR = new User(2L, "Bob", "bob@mail.ru");
-    private static final ItemRequest REQUEST = new ItemRequest(1L, "Drill 2000 MaxPro", LocalDateTime.now(),
-            REQUESTOR);
+    private static final ItemRequest REQUEST = new ItemRequest(
+            1L, "Drill 2000 MaxPro", LocalDateTime.now(), REQUESTOR);
     @Autowired
     private JacksonTester<ItemRequestDto> testerDto;
 

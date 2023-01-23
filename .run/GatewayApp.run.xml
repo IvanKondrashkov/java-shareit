@@ -2,7 +2,10 @@
   <configuration default="false" name="GatewayApp" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
     <option name="ACTIVE_PROFILES" value="test" />
     <module name="gateway" />
+    <projectPathOnTarget name="projectPathOnTarget" value="/app" />
+    <target name="@@@LOCAL@@@" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="ru.practicum.shareit.GatewayApp" />
+    <option name="VM_PARAMETERS" value="-Dserver.port=8080" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

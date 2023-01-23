@@ -2,7 +2,10 @@
   <configuration default="false" name="ServerApp" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
     <option name="ACTIVE_PROFILES" value="test" />
     <module name="server" />
+    <projectPathOnTarget name="projectPathOnTarget" value="/app" />
+    <target name="@@@LOCAL@@@" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="ru.practicum.shareit.ServerApp" />
+    <option name="VM_PARAMETERS" value="-Dserver.port=9090" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.repo;
 
+import java.util.List;
 import java.util.Set;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.model.Comment;
@@ -60,6 +62,17 @@ public class CommentRepoTest {
     @Test
     void findAllByItemId() {
         Set<Comment> comments = commentRepository.findAllByItemId(item.getId());
+
+        assertNotNull(owner.getId());
+        assertNotNull(author.getId());
+        assertNotNull(item.getId());
+        assertNotNull(comment.getId());
+        assertEquals(1, comments.size());
+    }
+
+    @Test
+    void findByItemIn() {
+        Set<Comment> comments = commentRepository.findByItemIn(List.of(item), Sort.by(Sort.Direction.DESC, "created"));
 
         assertNotNull(owner.getId());
         assertNotNull(author.getId());

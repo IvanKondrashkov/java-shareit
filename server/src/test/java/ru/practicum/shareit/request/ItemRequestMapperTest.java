@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ItemRequestMapperTest {
     private static final User REQUESTOR = new User(2L, "Bob", "bob@mail.ru");
-    private static final ItemRequest REQUEST = new ItemRequest(1L, "Drill 2000 MaxPro", LocalDateTime.now(),
-            REQUESTOR);
+    private static final ItemRequest REQUEST = new ItemRequest(
+            1L, "Drill 2000 MaxPro", LocalDateTime.now(), REQUESTOR);
     private static final ItemRequestDto DTO = ItemRequestMapper.toItemRequestDto(REQUEST);
 
     @ParameterizedTest

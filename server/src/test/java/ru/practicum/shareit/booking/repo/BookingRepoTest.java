@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.booking.model.Booking;
@@ -78,6 +79,66 @@ public class BookingRepoTest {
     }
 
     @Test
+    void findAllByItemOwnerIdAndStartIsBeforeAndEndIsAfter() {
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerIdAndStartIsBeforeAndEndIsAfter(
+                owner.getId(), LocalDateTime.now(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByItemOwnerIdAndEndIsBefore() {
+        booking.setEnd(LocalDateTime.now().minusDays(2));
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerIdAndEndIsBefore(
+                owner.getId(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByItemOwnerIdAndStartIsAfter() {
+        booking.setStart(LocalDateTime.now().plusDays(2));
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerIdAndStartIsAfter(
+                owner.getId(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByItemOwnerIdAndStatusEquals() {
+        booking.setStatus(BookingStatus.APPROVED);
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByItemOwnerIdAndStatusEquals(
+                owner.getId(), BookingStatus.APPROVED, Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
     void findAllByBookerId() {
         List<Booking> bookings = bookingRepository.findAllByBookerId(booker.getId(), Pageable.unpaged());
 
@@ -89,8 +150,80 @@ public class BookingRepoTest {
     }
 
     @Test
+    void findAllByBookerIdAndStartIsBeforeAndEndIsAfter() {
+        List<Booking> bookings = bookingRepository.findAllByBookerIdAndStartIsBeforeAndEndIsAfter(
+                booker.getId(), LocalDateTime.now(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByBookerIdAndEndIsBefore() {
+        booking.setEnd(LocalDateTime.now().minusDays(2));
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByBookerIdAndEndIsBefore(
+                booker.getId(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByBookerIdAndStartIsAfter() {
+        booking.setStart(LocalDateTime.now().plusDays(2));
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByBookerIdAndStartIsAfter(
+                booker.getId(), LocalDateTime.now(), Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findAllByBookerIdAndStatusEquals() {
+        booking.setStatus(BookingStatus.APPROVED);
+        em.merge(booking);
+        em.flush();
+
+        List<Booking> bookings = bookingRepository.findAllByBookerIdAndStatusEquals(
+                booker.getId(), BookingStatus.APPROVED, Pageable.unpaged());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
     void findAllByItemId() {
         List<Booking> bookings = bookingRepository.findAllByItemId(item.getId());
+
+        assertNotNull(owner.getId());
+        assertNotNull(booker.getId());
+        assertNotNull(item.getId());
+        assertNotNull(booking.getId());
+        assertEquals(1, bookings.size());
+    }
+
+    @Test
+    void findByItemInAndStatusEquals() {
+        List<Booking> bookings = bookingRepository.findByItemInAndStatusEquals(List.of(item), BookingStatus.WAITING,
+                Sort.by(Sort.Direction.DESC, "start"));
 
         assertNotNull(owner.getId());
         assertNotNull(booker.getId());

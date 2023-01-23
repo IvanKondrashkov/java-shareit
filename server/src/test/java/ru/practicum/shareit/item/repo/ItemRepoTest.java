@@ -1,7 +1,7 @@
 package ru.practicum.shareit.item.repo;
 
-import java.util.List;
 import java.util.Set;
+import java.util.List;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
@@ -84,6 +84,17 @@ public class ItemRepoTest {
     @Test
     void findAllByText() {
         List<Item> items = itemRepository.findAllByText("Drill");
+
+        assertNotNull(owner.getId());
+        assertNotNull(requestor.getId());
+        assertNotNull(request.getId());
+        assertNotNull(item.getId());
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    void findItemByRequestIn() {
+        Set<Item> items = itemRepository.findItemByRequestIn(List.of(request));
 
         assertNotNull(owner.getId());
         assertNotNull(requestor.getId());
